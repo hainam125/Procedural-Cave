@@ -153,10 +153,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2da0a1d0769944df489d5fa30d26fbc2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 100
-  height: 60
-  randomFillPercent: 45
-  seed: hainam
+  width: 115
+  height: 75
+  randomFillPercent: 54
+  seed: 0.9389685
   useRandomSeed: 0
 --- !u!4 &232084612
 Transform:
