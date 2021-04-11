@@ -120,10 +120,31 @@ public class MapGenerator : MonoBehaviour {
             }
         }
 
+        survivingRooms.Sort();
+        survivingRooms[0].isMainRoom = true;
+        survivingRooms[0].isAccessibleFromMainRoom = true;
         CoonectClosestRooms(survivingRooms);
     }
 
-    private void CoonectClosestRooms(List<Room> allRooms) {
+    private void CoonectClosestRooms(List<Room> allRooms, bool forceAccessibilityMainRoom = false) {
+        var roomListA = new List<Room>();
+        var roomListB = new List<Room>();
+
+        if (forceAccessibilityMainRoom) {
+            foreach(var room in allRooms) {
+                if (room.isAccessibleFromMainRoom) {
+                    roomListB.Add(room);
+                }
+                else {
+                    roomListA.Add(room);
+                }
+            }
+        }
+        else {
+            roomListA = allRooms;
+            roomListB = allRooms;
+        }
+
         var bestDistance = 0;
         var bestTileA = new Coord();
         var bestTileB = new Coord();
@@ -131,14 +152,15 @@ public class MapGenerator : MonoBehaviour {
         var bestRoomB = new Room();
         var possibleConnectionFound = false;
 
-        foreach (var roomA in allRooms) {
-            possibleConnectionFound = false;
-            foreach (var roomB in allRooms) {
-                if (roomA == roomB) continue;
-                if (roomA.IsConnected(roomB)) {
-                    possibleConnectionFound = false;
-                    break;
+        foreach (var roomA in roomListA) {
+            if (!forceAccessibilityMainRoom) {
+                possibleConnectionFound = false;
+                if (roomA.connectedRooms.Count > 0) {
+                    continue;
                 }
+            }
+            foreach (var roomB in roomListB) {
+                if (roomA == roomB || roomA.IsConnected(roomB)) continue;
                 for (int tileIndexA = 0; tileIndexA < roomA.edgeTiles.Count; tileIndexA++) {
                     for (int tileIndexB = 0; tileIndexB < roomB.edgeTiles.Count; tileIndexB++) {
                         var tileA = roomA.edgeTiles[tileIndexA];
@@ -156,9 +178,19 @@ public class MapGenerator : MonoBehaviour {
                     }
                 }
             }
-            if (possibleConnectionFound) {
+            if (possibleConnectionFound && !forceAccessibilityMainRoom) {
                 CreatePassage(bestRoomA, bestRoomB, bestTileA, bestTileB);
             }
+        }
+
+
+        if (possibleConnectionFound && forceAccessibilityMainRoom) {
+            CreatePassage(bestRoomA, bestRoomB, bestTileA, bestTileB);
+            CoonectClosestRooms(allRooms, true);
+        }
+
+        if (!forceAccessibilityMainRoom) {
+            CoonectClosestRooms(allRooms, true);
         }
     }
 
@@ -230,11 +262,13 @@ public class MapGenerator : MonoBehaviour {
         }
     }
 
-    private class Room {
+    private class Room : System.IComparable<Room> {
         public List<Coord> tiles;
         public List<Coord> edgeTiles;
         public List<Room> connectedRooms;
         public int roomSize;
+        public bool isAccessibleFromMainRoom;
+        public bool isMainRoom;
 
         public Room() {
         }
@@ -252,6 +286,7 @@ public class MapGenerator : MonoBehaviour {
             }
         }
 
+
         private bool CheckEdge(Coord tile, int[,] map) {
             for (int x = tile.tileX - 1; x <= tile.tileX + 1; x++) {
                 for (int y = tile.tileY - 1; y <= tile.tileY + 1; y++) {
@@ -267,7 +302,24 @@ public class MapGenerator : MonoBehaviour {
             return connectedRooms.Contains(other);
         }
 
+        public int CompareTo(Room other) {
+            return other.roomSize.CompareTo(roomSize);
+        }
+
+        public void SetAccessableFromMainRoom() {
+            if (!isAccessibleFromMainRoom) {
+                isAccessibleFromMainRoom = true;
+                foreach (var room in connectedRooms) room.SetAccessableFromMainRoom();
+            }
+        }
+
         public static void ConnectRoom(Room roomA, Room roomB) {
+            if (roomA.isAccessibleFromMainRoom) {
+                roomB.SetAccessableFromMainRoom();
+            }
+            else if (roomB.isAccessibleFromMainRoom) {
+                roomA.SetAccessableFromMainRoom();
+            }
             roomA.connectedRooms.Add(roomB);
             roomB.connectedRooms.Add(roomA);
         }
