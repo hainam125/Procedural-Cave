@@ -196,7 +196,68 @@ public class MapGenerator : MonoBehaviour {
 
     private void CreatePassage(Room roomA, Room roomB, Coord tileA, Coord tileB) {
         Room.ConnectRoom(roomA, roomB);
-        Debug.DrawLine(CoordToWorldPoint(tileA), CoordToWorldPoint(tileB), Color.white, 100);
+        //Debug.DrawLine(CoordToWorldPoint(tileA), CoordToWorldPoint(tileB), Color.white, 100);
+
+        var line = GetLine(tileA, tileB);
+        foreach (var c in line) DrawCircle(c, 1);
+    }
+
+    //https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
+    private List<Coord> GetLine(Coord from, Coord to) {
+        List<Coord> line = new List<Coord>();
+
+        int x = from.tileX;
+        int y = from.tileY;
+
+        int dx = to.tileX - from.tileX;
+        int dy = to.tileY - from.tileY;
+
+        bool inverted = false;
+        int step = (int)Mathf.Sign(dx);
+        int gradientStep = (int)Mathf.Sign(dy);
+
+        int longest = Mathf.Abs(dx);
+        int shortest = Mathf.Abs(dy);
+
+        if (longest < shortest) {
+            inverted = true;
+            longest = Mathf.Abs(dy);
+            shortest = Mathf.Abs(dx);
+
+            step = (int)Mathf.Sign(dy);
+            gradientStep = (int)Mathf.Sign(dx);
+        }
+
+        int gradientAccumulation = longest / 2;
+        for (int i = 0; i < longest; i++) {
+            line.Add(new Coord(x, y));
+
+            if (inverted) y += step;
+            else x += step;
+
+            gradientAccumulation += shortest;
+            if (gradientAccumulation >= longest) {
+                if (inverted) x += gradientStep;
+                else y += gradientStep;
+                gradientAccumulation -= longest;
+            }
+        }
+
+        return line;
+    }
+
+    private void DrawCircle(Coord c, int r) {
+        for (int x = -r; x <= r; x++) {
+            for (int y = -r; y <= r; y++) {
+                if (x * x + y * y <= r * r) {
+                    int drawX = c.tileX + x;
+                    int drawY = c.tileY + y;
+                    if (IsInMapRange(drawX, drawY)) {
+                        map[drawX, drawY] = 0;
+                    }
+                }
+            }
+        }
     }
 
     private Vector3 CoordToWorldPoint(Coord tile) {
