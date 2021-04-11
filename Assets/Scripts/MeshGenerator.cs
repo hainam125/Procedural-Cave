@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class MeshGenerator : MonoBehaviour {
     [SerializeField] private MeshFilter walls;
+    [SerializeField] private MeshFilter cave;
+    [SerializeField] private bool is2D;
 
     private SquareGrid squareGrid;
 
@@ -31,13 +33,13 @@ public class MeshGenerator : MonoBehaviour {
         }
 
         Mesh mesh = new Mesh();
-        GetComponent<MeshFilter>().mesh = mesh;
+        cave.mesh = mesh;
 
         mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles.ToArray();
         mesh.RecalculateNormals();
 
-        CreateWallMesh();
+        if (!is2D) CreateWallMesh();
     }
 
     private void CreateWallMesh() {
@@ -76,6 +78,9 @@ public class MeshGenerator : MonoBehaviour {
         wallMesh.RecalculateNormals();
 
         walls.mesh = wallMesh;
+
+        MeshCollider wallCollider = walls.gameObject.AddComponent<MeshCollider>();
+        wallCollider.sharedMesh = wallMesh;
     }
 
     private void TriangulateSquare(Square square) {
