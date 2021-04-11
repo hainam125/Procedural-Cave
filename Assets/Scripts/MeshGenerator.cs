@@ -223,6 +223,24 @@ public class MeshGenerator : MonoBehaviour {
                 }
             }
         }
+        SimplifyMeshOutlines();
+    }
+
+    private void SimplifyMeshOutlines() {
+        for (int outlineIndex = 0; outlineIndex < outlines.Count; outlineIndex++) {
+            List<int> simplifiedOutline = new List<int>();
+            Vector3 dirOld = Vector3.zero;
+            for (int i = 0; i < outlines[outlineIndex].Count; i++) {
+                Vector3 p1 = vertices[outlines[outlineIndex][i]];
+                Vector3 p2 = vertices[outlines[outlineIndex][(i + 1) % outlines[outlineIndex].Count]];
+                Vector3 dir = p1 - p2;
+                if (dir != dirOld) {
+                    dirOld = dir;
+                    simplifiedOutline.Add(outlines[outlineIndex][i]);
+                }
+            }
+            outlines[outlineIndex] = simplifiedOutline;
+        }
     }
 
     private void FollowOutline(int vertexIndex, int outlineIndex) {
